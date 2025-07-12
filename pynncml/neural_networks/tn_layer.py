@@ -54,7 +54,7 @@ class TimeNormalization(nn.Module):
         """
         This function generate the initial state of the Module. This include only Time Normalization state
 
-        :param working_device: str that state the current working device.
+        :param working_device: torch.device or str that state the current working device.
         :param batch_size: int represent the batch size.
         :return: A Tensor, that hold the initial state.
         """

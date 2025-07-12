@@ -32,12 +32,14 @@ class TwoStepNetwork(nn.Module):
                  rnn_n_features: int,
                  metadata_input_size: int,
                  metadata_n_features: int,
+                 metadata_n_hidden: int = 0,
                  ):
         super(TwoStepNetwork, self).__init__()
         self.bb = Backbone(n_layers, rnn_type, normalization_cfg, enable_tn=enable_tn, tn_alpha=tn_alpha,
                            rnn_input_size=rnn_input_size, rnn_n_features=rnn_n_features,
                            metadata_input_size=metadata_input_size,
-                           metadata_n_features=metadata_n_features)
+                           metadata_n_features=metadata_n_features,
+                           metadata_n_hidden=metadata_n_hidden)
         self.rh = RainHead(self.bb.total_n_features())
         self.wdh = WetDryHead(self.bb.total_n_features())
 

@@ -3,6 +3,8 @@ import os
 import urllib.request
 import zipfile
 from functools import partial
+from io import BytesIO
+
 
 import pandas as pd
 import xarray as xr
@@ -68,7 +70,11 @@ def transform_open_mrg(fn, path_to_extract_to):
 
     # Read metadata and dataset
     df_metadata = pd.read_csv(os.path.join(path_to_extract_to, 'cml/cml_metadata.csv'), index_col=0)
-    ds = xr.open_dataset(os.path.join(path_to_extract_to, 'cml/cml.nc'))
+    # print(os.path.join(path_to_extract_to, 'cml/cml.nc'))
+    # print(type(os.path.join(path_to_extract_to, 'cml/cml.nc')))
+    # ds = xr.open_dataset(os.path.join(path_to_extract_to, 'cml/cml.nc'))
+    with open(os.path.join(path_to_extract_to, 'cml/cml.nc'), "rb") as f:
+        ds = xr.open_dataset(BytesIO(f.read()), engine='h5netcdf')
 
     # Add metadata with naming convention as currently used in pycomlink example dataset file
     for col_name, ds_var_name in [

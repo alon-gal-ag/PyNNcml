@@ -254,7 +254,17 @@ class Link(LinkBase):
         rsl = np.lib.stride_tricks.as_strided(rsl, shape=(int(rsl.shape[0] / ratio), ratio), strides=(4 * ratio, 4))
         tsl = np.lib.stride_tricks.as_strided(tsl, shape=(int(tsl.shape[0] / ratio), ratio), strides=(4 * ratio, 4))
 
-        return gauge_data, rsl, tsl, np.asarray([self.meta_data.frequency, self.meta_data.length]).astype("float32")
+        # compute geometric features
+        geo_features = self.compute_geo_features()
+
+        # concat original features with geo features
+        features = np.concatenate(
+            (np.asarray([self.meta_data.frequency, self.meta_data.length]).astype("float32"),
+             geo_features.astype("float32")),
+            axis=0
+        )
+
+        return gauge_data, rsl, tsl, features #np.asarray([self.meta_data.frequency, self.meta_data.length]).astype("float32"), geo_features
 
     def plot(self):
         """
@@ -334,6 +344,64 @@ class Link(LinkBase):
         else:
             return LinkMinMax(min_rsl_vector, max_rsl_vector, rain_vector, time_vector, self.meta_data,
                               gauge_ref=self.gauge_ref)
+
+
+   
+    def compute_geo_features(self, xy0=None, xy1=None, xy_gauge=None):
+        """
+        compute geometric features between a link (xy0, xy1) and a rain gauge (xy_gauge).
+        assuming no zero-length link and gauge not exactly at link center.
+        """
+        if xy0 is None:
+            xy0 = self.meta_data.xy_zero
+        if xy1 is None:
+            xy1 = self.meta_data.xy_one
+        if xy_gauge is None:
+            xy_gauge = np.array([self.gauge_ref.x, self.gauge_ref.y]).flatten()
+
+        xy_link = (xy0 + xy1) / 2.0  # Link center
+        link_vec = xy1 - xy0
+        link_length = np.linalg.norm(link_vec)
+        link_unit_vec = link_vec / link_length  # unit vector
+
+        gauge_vec = xy_gauge - xy_link
+        gauge_dist = np.linalg.norm(gauge_vec)
+
+        gauge_dist_rel = gauge_dist / link_length
+
+        # Projection of gauge_vec onto link direction
+        proj = np.dot(gauge_vec, link_unit_vec)
+        cos_theta = proj / gauge_dist
+
+        # Signed sine using 2D cross product
+        sin_theta = np.cross(link_unit_vec, gauge_vec) / gauge_dist
+
+        # Perpendicular unit vector to link
+        link_perp_unit = np.array([-link_unit_vec[1], link_unit_vec[0]])
+        rel_x = proj  # along link axis
+        rel_y = np.dot(gauge_vec, link_perp_unit)  # perpendicular to link axis
+
+        rel_x_norm = rel_x / link_length
+        rel_y_norm = rel_y / link_length
+
+        # # Absolute orientation of the link (optional)
+        # abs_angle_rad = np.arctan2(link_vec[1], link_vec[0])
+        # abs_cos = np.cos(abs_angle_rad)
+        # abs_sin = np.sin(abs_angle_rad)
+
+        return np.array([gauge_dist_rel, cos_theta, sin_theta, rel_x_norm, rel_y_norm], dtype=np.float32)
+        # return {
+        #     "link_length": link_length,
+        #     "gauge_dist": gauge_dist,
+        #     "gauge_dist_rel": gauge_dist_rel,
+        #     "cos_theta": cos_theta,
+        #     "sin_theta": sin_theta,
+        #     "rel_x_norm": rel_x_norm,
+        #     "rel_y_norm": rel_y_norm,
+        #     "abs_cos": abs_cos,
+        #     "abs_sin": abs_sin,
+        #     "angle_between": np.arctan2(sin_theta, cos_theta)
+        # }
 
 
 # TODO:Remove this function and replace with OpenMRG dataset

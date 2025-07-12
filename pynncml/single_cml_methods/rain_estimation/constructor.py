@@ -50,6 +50,7 @@ def two_step_network(n_layers: int, rnn_type: RNNType,
                      rnn_n_features: int = RNN_FEATURES,
                      metadata_input_size: int = STATIC_INPUT_SIZE,
                      metadata_n_features: int = FC_FEATURES,
+                     metadata_n_hidden: int = 0,
                      pretrained=True):
     """
 
@@ -69,7 +70,8 @@ def two_step_network(n_layers: int, rnn_type: RNNType,
     model = TwoStepNetwork(n_layers, rnn_type, normalization_cfg, enable_tn=enable_tn, tn_alpha=tn_alpha,
                            tn_affine=tn_affine,
                            rnn_input_size=rnn_input_size, rnn_n_features=rnn_n_features,
-                           metadata_input_size=metadata_input_size, metadata_n_features=metadata_n_features)
+                           metadata_input_size=metadata_input_size, metadata_n_features=metadata_n_features,
+                           metadata_n_hidden=metadata_n_hidden)
     if pretrained and not enable_tn:
         model_file = get_model_from_zoo(ModelType.TWOSTEP, rnn_type, n_layers)
         model.load_state_dict(torch.load(model_file, map_location=torch.device('cpu')))
