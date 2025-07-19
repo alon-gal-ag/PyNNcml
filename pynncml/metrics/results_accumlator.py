@@ -122,4 +122,4 @@ class GroupAnalysis:
         print(tab)
         print("-" * 150)
 
-        return nrmse_group, nbias_group, group_data
+        return nrmse_group, nbias_group, group_data, nrmse, nbias

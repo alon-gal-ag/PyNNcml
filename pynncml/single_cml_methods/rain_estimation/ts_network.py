@@ -33,18 +33,22 @@ class TwoStepNetwork(nn.Module):
                  metadata_input_size: int,
                  metadata_n_features: int,
                  metadata_n_hidden: int = 0,
+                 metadata_feature_mask = None,
+                 freeze_rnn: bool = False,
                  ):
         super(TwoStepNetwork, self).__init__()
         self.bb = Backbone(n_layers, rnn_type, normalization_cfg, enable_tn=enable_tn, tn_alpha=tn_alpha,
                            rnn_input_size=rnn_input_size, rnn_n_features=rnn_n_features,
                            metadata_input_size=metadata_input_size,
                            metadata_n_features=metadata_n_features,
-                           metadata_n_hidden=metadata_n_hidden)
+                           metadata_n_hidden=metadata_n_hidden,
+                           metadata_feature_mask=metadata_feature_mask,
+                           freeze_rnn=freeze_rnn)
         self.rh = RainHead(self.bb.total_n_features())
         self.wdh = WetDryHead(self.bb.total_n_features())
 
     def forward(self, data: torch.Tensor, metadata: torch.Tensor,
-                state: torch.Tensor) -> (torch.Tensor, torch.Tensor):  # model forward pass
+                state: torch.Tensor):  # model forward pass
         """
         This is the module forward function
 
@@ -61,7 +65,7 @@ class TwoStepNetwork(nn.Module):
         features, state = self.bb(data, metadata, state)
         return torch.cat([self.rh(features), self.wdh(features)], dim=-1), state
 
-    def init_state(self, batch_size: int = 1) -> torch.Tensor:
+    def init_state(self, batch_size: int = 1):
         """
         This function generate the initial state of the Module.
 
